@@ -241,11 +241,11 @@ function emptyDetail() {
     <div class="detail-empty">
       <div class="empty-art" aria-hidden="true">
         <svg width="66" height="66" viewBox="0 0 120 120" fill="none">
-          <rect x="20" y="27" width="80" height="66" rx="11" fill="#fffdf8" stroke="#d8cdb9" stroke-width="2"/>
-          <circle cx="43" cy="52" r="10" fill="#e4ede7" stroke="#2f5d50" stroke-width="2"/>
-          <path d="M32 75c2.2-7 6-10.5 11-10.5s8.8 3.5 11 10.5" stroke="#2f5d50" stroke-width="2" stroke-linecap="round"/>
-          <path d="M65 47h21M65 56h14M65 65h21" stroke="#d8cdb9" stroke-width="3" stroke-linecap="round"/>
-          <path d="m92 76 2.6 5.2 5.8.9-4.2 4 1 5.7-5.2-2.7-5.1 2.7 1-5.7-4.2-4 5.7-.9z" fill="#c5933c"/>
+          <rect x="20" y="27" width="80" height="66" rx="11" fill="#fbfcff" stroke="#c9d3e2" stroke-width="2"/>
+          <circle cx="43" cy="52" r="10" fill="#e7eef9" stroke="#4a6da8" stroke-width="2"/>
+          <path d="M32 75c2.2-7 6-10.5 11-10.5s8.8 3.5 11 10.5" stroke="#4a6da8" stroke-width="2" stroke-linecap="round"/>
+          <path d="M65 47h21M65 56h14M65 65h21" stroke="#c9d3e2" stroke-width="3" stroke-linecap="round"/>
+          <path d="m92 76 2.6 5.2 5.8.9-4.2 4 1 5.7-5.2-2.7-5.1 2.7 1-5.7-4.2-4 5.7-.9z" fill="#6b8cc7"/>
         </svg>
       </div>
       <h2>通讯录，从一个人开始</h2>
