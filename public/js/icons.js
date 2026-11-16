@@ -22,6 +22,8 @@ const PATHS = {
   file: '<path d="M7 3.5h7L18 7.5v13H7Z"/><path d="M14 3.5v4h4"/>',
   refresh: '<path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v4.5h-4.5"/>',
   chevron: '<path d="m9 5 7 7-7 7"/>',
+  user: '<circle cx="12" cy="8.5" r="3.4"/><path d="M5.5 20c.6-3.8 3-5.8 6.5-5.8s5.9 2 6.5 5.8"/>',
+  logout: '<path d="M14.5 4.5H6.5A1.5 1.5 0 0 0 5 6v12a1.5 1.5 0 0 0 1.5 1.5h8"/><path d="M17 8.5 20.5 12 17 15.5M10.5 12h10"/>',
 };
 
 export function icon(name, className = '') {

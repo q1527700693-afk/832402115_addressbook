@@ -2,6 +2,8 @@ import express from 'express';
 import multer from 'multer';
 import path from 'node:path';
 import { createDatabase, PROJECT_ROOT } from './db.js';
+import { attachUser } from './auth.js';
+import { authRouter } from './routes/auth.js';
 import { contactsRouter } from './routes/contacts.js';
 import { excelRouter } from './routes/excel.js';
 
@@ -15,11 +17,13 @@ export function createApp({ dbPath, db = createDatabase(dbPath) } = {}) {
     next();
   });
   app.use(express.json({ limit: '1mb' }));
+  app.use(attachUser(db));
 
   app.get('/api/health', (req, res) => {
     res.json({ ok: true, service: 'shiguang-address-book', time: new Date().toISOString() });
   });
 
+  app.use('/api', authRouter(db));
   app.use('/api', contactsRouter(db));
   app.use('/api', excelRouter(db));
 

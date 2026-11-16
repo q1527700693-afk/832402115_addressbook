@@ -1,6 +1,7 @@
 import express from 'express';
 import multer from 'multer';
 import { buildContactsWorkbook, buildTemplateWorkbook, parseContactsWorkbook } from '../excel.js';
+import { requireUser } from '../auth.js';
 import { importContacts, listContacts, ValidationError } from '../store.js';
 
 const MAX_FILE_SIZE = 8 * 1024 * 1024;
@@ -39,8 +40,8 @@ function handle(fn) {
 export function excelRouter(db) {
   const router = express.Router();
 
-  router.get('/export', handle(async (req, res) => {
-    const contacts = listContacts(db);
+  router.get('/export', requireUser, handle(async (req, res) => {
+    const contacts = listContacts(db, req.user.id);
     const buffer = await buildContactsWorkbook(contacts);
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', contentDisposition(`通讯录-${today()}.xlsx`));
@@ -55,11 +56,11 @@ export function excelRouter(db) {
     res.send(Buffer.from(buffer));
   }));
 
-  router.post('/import', upload.single('file'), handle(async (req, res) => {
+  router.post('/import', requireUser, upload.single('file'), handle(async (req, res) => {
     if (!req.file) throw new ValidationError('请选择要导入的 Excel 文件');
     const mode = req.body?.mode === 'skip' ? 'skip' : 'merge';
     const rows = await parseContactsWorkbook(req.file.buffer);
-    const summary = importContacts(db, rows, mode);
+    const summary = importContacts(db, req.user.id, rows, mode);
     res.json({ ...summary, mode });
   }));
 

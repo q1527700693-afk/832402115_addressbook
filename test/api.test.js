@@ -10,13 +10,24 @@ const server = app.listen(0, '127.0.0.1');
 await once(server, 'listening');
 const base = `http://127.0.0.1:${server.address().port}`;
 
+const signup = await fetch(`${base}/api/auth/register`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ username: 'test_user', password: 'secret123' }),
+});
+if (signup.status !== 201) throw new Error(`test signup failed: ${signup.status}`);
+const cookie = (signup.headers.get('set-cookie') || '').split(';')[0];
+
 test.after(() => {
   server.close();
   db.close();
 });
 
 async function jsonRequest(path, options = {}) {
-  const response = await fetch(`${base}${path}`, options);
+  const response = await fetch(`${base}${path}`, {
+    ...options,
+    headers: { Cookie: cookie, ...(options.headers || {}) },
+  });
   const body = await response.json();
   return { response, body };
 }
@@ -144,7 +155,7 @@ test('rejects invalid input', async () => {
 });
 
 test('exports a workbook with one row per contact', async () => {
-  const response = await fetch(`${base}/api/export`);
+  const response = await fetch(`${base}/api/export`, { headers: { Cookie: cookie } });
   assert.equal(response.status, 200);
   assert.match(response.headers.get('content-type'), /spreadsheetml/);
   assert.match(response.headers.get('content-disposition'), /attachment/);
@@ -186,7 +197,11 @@ async function importWorkbook(rows, mode = 'merge') {
     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   }), 'contacts.xlsx');
   form.append('mode', mode);
-  const response = await fetch(`${base}/api/import`, { method: 'POST', body: form });
+  const response = await fetch(`${base}/api/import`, {
+    method: 'POST',
+    body: form,
+    headers: { Cookie: cookie },
+  });
   return { response, body: await response.json() };
 }
 
@@ -224,10 +239,18 @@ test('skip mode leaves existing contacts untouched', async () => {
 test('rejects non-Excel uploads and missing files', async () => {
   const form = new FormData();
   form.append('file', new Blob(['hello'], { type: 'text/plain' }), 'notes.txt');
-  const badType = await fetch(`${base}/api/import`, { method: 'POST', body: form });
+  const badType = await fetch(`${base}/api/import`, {
+    method: 'POST',
+    body: form,
+    headers: { Cookie: cookie },
+  });
   assert.equal(badType.status, 400);
 
-  const empty = await fetch(`${base}/api/import`, { method: 'POST', body: new FormData() });
+  const empty = await fetch(`${base}/api/import`, {
+    method: 'POST',
+    body: new FormData(),
+    headers: { Cookie: cookie },
+  });
   assert.equal(empty.status, 400);
 });
 

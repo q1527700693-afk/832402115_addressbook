@@ -14,6 +14,8 @@ const state = {
   contacts: [],
   total: 0,
   favorites: 0,
+  user: null,
+  preview: false,
   filter: 'all',
   search: '',
   selectedId: null,
@@ -384,6 +386,7 @@ async function load({ silent = false } = {}) {
     state.contacts = data.contacts;
     state.total = data.total;
     state.favorites = data.favorites;
+    state.preview = Boolean(data.preview);
     state.error = null;
     state.loading = false;
     if (!state.contacts.some((contact) => contact.id === state.selectedId)) {
@@ -394,6 +397,7 @@ async function load({ silent = false } = {}) {
     state.error = error.message;
     if (!silent) toast(error.message, 'error');
   }
+  renderAccount();
   renderAll();
 }
 
@@ -848,6 +852,156 @@ async function copyText(text) {
 }
 
 /* -------------------------------------------------------------------------- */
+/* Account & preview                                                          */
+/* -------------------------------------------------------------------------- */
+
+const AUTH_COPY = {
+  login: {
+    eyebrow: 'Sign in',
+    title: '登录',
+    hint: '使用用户名和密码登录，继续管理你自己的通讯录。',
+    submit: '登录',
+  },
+  register: {
+    eyebrow: 'Create account',
+    title: '注册账号',
+    hint: '用户名 3–32 位字母、数字、下划线、点或短横线；密码至少 6 位。注册后即为你的独立通讯录。',
+    submit: '创建账号',
+  },
+};
+
+function accountTemplate() {
+  if (state.user) {
+    return `
+      <div class="account-chip">
+        <span class="account-avatar">${esc(avatarText(state.user.username))}</span>
+        <span class="account-meta">
+          <strong>${esc(state.user.username)}</strong>
+          <span>已登录</span>
+        </span>
+        <button class="account-exit" type="button" data-action="logout" title="退出登录" aria-label="退出登录">${icon('logout')}</button>
+      </div>`;
+  }
+  return `
+    <div class="account-guest">
+      <span class="account-label">${icon('user')}未登录</span>
+      <span class="account-actions">
+        <button class="btn btn-ghost btn-xs" type="button" data-action="open-login">登录</button>
+        <button class="btn btn-primary btn-xs" type="button" data-action="open-register">注册</button>
+      </span>
+    </div>`;
+}
+
+function renderAccount() {
+  const accountEl = document.querySelector('#account');
+  if (accountEl) accountEl.innerHTML = accountTemplate();
+  const banner = document.querySelector('#preview-banner');
+  if (!banner) return;
+  banner.hidden = Boolean(state.user);
+  if (!state.user) {
+    banner.innerHTML = `${icon('alert')}<span>预览模式：这是示例通讯录，注册或登录后即可建立属于你自己的联系人。</span><button class="link-btn" type="button" data-action="open-register">立即注册</button>`;
+  }
+}
+
+function authModalTemplate(mode) {
+  const copy = AUTH_COPY[mode] ?? AUTH_COPY.login;
+  return `
+    <div class="overlay" data-overlay>
+      <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+        <header class="modal-head">
+          <div>
+            <p class="eyebrow">${copy.eyebrow}</p>
+            <h2 id="auth-title">${copy.title}</h2>
+          </div>
+          <button class="icon-btn" type="button" data-action="close-modal" aria-label="关闭">${icon('close')}</button>
+        </header>
+        <div class="auth-tabs" role="tablist" aria-label="登录或注册">
+          <button class="auth-tab ${mode === 'login' ? 'active' : ''}" type="button" role="tab" aria-selected="${mode === 'login'}" data-action="auth-tab" data-mode="login">登录</button>
+          <button class="auth-tab ${mode === 'register' ? 'active' : ''}" type="button" role="tab" aria-selected="${mode === 'register'}" data-action="auth-tab" data-mode="register">注册</button>
+        </div>
+        <form id="auth-form" data-mode="${mode}" novalidate>
+          <div class="modal-body">
+            <p class="modal-note" style="margin-bottom:16px">${copy.hint}</p>
+            <div class="field">
+              <label for="auth-username">用户名</label>
+              <input class="input" id="auth-username" name="username" autocomplete="username" maxlength="32" placeholder="例如：linzhixia" required>
+            </div>
+            <div class="field" style="margin-top:14px">
+              <label for="auth-password">密码</label>
+              <input class="input" id="auth-password" name="password" type="password" autocomplete="${mode === 'register' ? 'new-password' : 'current-password'}" maxlength="72" placeholder="至少 6 位" required>
+            </div>
+            <p class="auth-error" id="auth-error" role="alert" hidden></p>
+          </div>
+          <footer class="modal-foot">
+            <button class="btn btn-ghost" type="button" data-action="close-modal">取消</button>
+            <button class="btn btn-primary" type="submit" id="auth-submit">${copy.submit}</button>
+          </footer>
+        </form>
+      </div>
+    </div>`;
+}
+
+function openAuth(mode = 'login') {
+  openOverlay(authModalTemplate(mode));
+  const form = overlayEl.querySelector('#auth-form');
+  form.addEventListener('submit', submitAuth);
+  requestAnimationFrame(() => overlayEl.querySelector('#auth-username')?.focus());
+}
+
+async function submitAuth(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const mode = form.dataset.mode;
+  const username = form.querySelector('#auth-username').value.trim();
+  const password = form.querySelector('#auth-password').value;
+  const errorEl = form.querySelector('#auth-error');
+  errorEl.hidden = true;
+  if (!username || !password) {
+    errorEl.textContent = '请填写用户名和密码';
+    errorEl.hidden = false;
+    return;
+  }
+  const submit = form.querySelector('#auth-submit');
+  const restore = setButtonLoading(submit, mode === 'register' ? '创建中…' : '登录中…');
+  try {
+    const data = mode === 'register'
+      ? await api.register(username, password)
+      : await api.login(username, password);
+    state.user = data.user;
+    closeOverlay();
+    await load();
+    toast(mode === 'register' ? `账号已创建，欢迎 ${data.user.username}` : `欢迎回来，${data.user.username}`);
+  } catch (error) {
+    restore();
+    errorEl.textContent = error.message;
+    errorEl.hidden = false;
+  }
+}
+
+async function logout() {
+  try {
+    await api.logout();
+  } catch {
+    // A stale session still clears locally; the server expires it on its own.
+  }
+  state.user = null;
+  state.selectedId = null;
+  await load();
+  toast('已退出登录');
+}
+
+async function boot() {
+  try {
+    const data = await api.me();
+    state.user = data?.user ?? null;
+  } catch {
+    state.user = null;
+  }
+  renderAccount();
+  await load();
+}
+
+/* -------------------------------------------------------------------------- */
 /* Global events                                                              */
 /* -------------------------------------------------------------------------- */
 
@@ -855,6 +1009,12 @@ document.addEventListener('click', (event) => {
   const trigger = event.target.closest('[data-action]');
   if (!trigger || trigger.disabled) return;
   const action = trigger.dataset.action;
+  const needsAccount = ['new', 'import', 'export', 'favorite', 'edit', 'delete', 'confirm-delete'].includes(action);
+  if (needsAccount && !state.user) {
+    openAuth('register');
+    toast('注册或登录后即可使用完整功能');
+    return;
+  }
   switch (action) {
     case 'new':
       openEditor();
@@ -920,6 +1080,18 @@ document.addEventListener('click', (event) => {
     case 'import-again':
       openImport();
       break;
+    case 'open-login':
+      openAuth('login');
+      break;
+    case 'open-register':
+      openAuth('register');
+      break;
+    case 'auth-tab':
+      openAuth(trigger.dataset.mode);
+      break;
+    case 'logout':
+      logout();
+      break;
     default:
       break;
   }
@@ -964,7 +1136,8 @@ document.addEventListener('keydown', (event) => {
     searchEl.select();
   } else if (event.key.toLowerCase() === 'n') {
     event.preventDefault();
-    openEditor();
+    if (state.user) openEditor();
+    else openAuth('register');
   }
 });
 
@@ -972,4 +1145,4 @@ document.addEventListener('input', (event) => {
   if (event.target.id === 'f-name') event.target.closest('.field')?.classList.remove('field-error');
 });
 
-load();
+boot();

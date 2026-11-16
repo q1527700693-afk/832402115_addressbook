@@ -187,17 +187,17 @@ const CONTACTS = [
 
 const dbPath = resolveDbPath();
 const db = createDatabase(dbPath);
-db.exec('DELETE FROM contacts;');
+db.exec('DELETE FROM contacts WHERE user_id IS NULL;');
 db.exec("DELETE FROM sqlite_sequence WHERE name IN ('contacts', 'contact_methods');");
 
 const createdAt = new Date();
 CONTACTS.forEach((contact, index) => {
-  const created = createContact(db, contact);
+  const created = createContact(db, null, contact);
   const stamp = new Date(createdAt.getTime() - index * 36 * 60 * 60 * 1000).toISOString();
   db.prepare('UPDATE contacts SET created_at = ?, updated_at = ? WHERE id = ?')
     .run(stamp, stamp, created.id);
 });
 
-const stats = countStats(db);
+const stats = countStats(db, null);
 console.log(`Seeded ${stats.total} contacts (${stats.favorites} favorites) into ${dbPath}`);
 db.close();

@@ -33,6 +33,18 @@ async function request(path, { method = 'GET', body } = {}) {
 }
 
 export const api = {
+  me() {
+    return request('auth/me');
+  },
+  login(username, password) {
+    return request('auth/login', { method: 'POST', body: { username, password } });
+  },
+  register(username, password) {
+    return request('auth/register', { method: 'POST', body: { username, password } });
+  },
+  logout() {
+    return request('auth/logout', { method: 'POST' });
+  },
   list(query = '') {
     return request(`contacts${query ? `?q=${encodeURIComponent(query)}` : ''}`);
   },
