@@ -1,0 +1,9 @@
+node_modules/
+data/
+.run/
+.chrome-profile/
+*.log
+.DS_Store
+.env
+coverage/
+tools/
