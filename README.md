@@ -152,8 +152,10 @@ addressbook-assignment/
 | --- | --- |
 | ![Excel export](docs/images/excel-export.png) | ![Mobile](docs/images/mobile.png) |
 
-A 27-second screen recording is available at [`docs/demo.mp4`](docs/demo.mp4),
-with a GIF preview at [`docs/images/demo-preview.gif`](docs/images/demo-preview.gif).
+A 48-second screen recording of the deployed app is available in the
+[demo-v2 release](https://github.com/q1527700693-afk/832402115_addressbook/releases/download/demo-v2/addressbook-demo.mp4).
+A shorter GIF preview is available at
+[`docs/images/demo-preview.gif`](docs/images/demo-preview.gif).
 
 ## Deployment
 
