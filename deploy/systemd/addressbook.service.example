@@ -1,0 +1,17 @@
+[Unit]
+Description=Shiguang Address Book
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/addressbook
+Environment=NODE_ENV=production
+Environment=PORT=3100
+Environment=DB_PATH=/var/lib/addressbook/addressbook.db
+ExecStart=/usr/bin/node server/index.js
+Restart=on-failure
+RestartSec=3
+User=www-data
+
+[Install]
+WantedBy=multi-user.target
